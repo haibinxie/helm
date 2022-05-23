@@ -1,0 +1,32 @@
+{{- if not (lookup "apps/v1" "DaemonSet" "kube-system" "portworx") }}
+kind: StorageCluster
+apiVersion: core.libopenstorage.org/v1
+metadata:
+  name: "{{ required "Clustername cannot be empty" .clusterName }}"
+  namespace: kube-system
+  annotations:
+
+spec:
+  image: portworx/oci-monitor:{{ required "A valid Image tag is required in the SemVer format" .Values.imageVersion }}
+  imagePullPolicy: Always
+  kvdb:
+    internal: true
+  storage:
+    useAllWithPartitions: true
+    forceUseDisks: true
+    journalDevice: auto
+  secretsProvider: k8s
+  stork:
+    enabled: true
+    args:
+      webhook-controller: "false"
+  autopilot:
+    enabled: true
+  monitoring:
+    prometheus:
+      enabled: true
+      exportMetrics: true
+  featureGates:
+    CSI: "true"
+{{- end }}
+
