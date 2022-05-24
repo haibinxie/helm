@@ -12,6 +12,12 @@
   {{- $secretType := .Values.secretType | default "k8s" }}
   {{- $deployEnvironmentIKS := .Capabilities.KubeVersion.GitVersion | regexMatch "IKS" }}
   {{- $drives := .Values.drives | default "none" }}
+  {{- $dataInterface := .Values.dataInterface | default "none" }}
+  {{- $managementInterface := .Values.managementInterface | default "none" }}
+  {{- $envVars := .Values.envVars | default "none" }}
+  {{- $customRegistryURL := .Values.customRegistryURL | default "none" }}
+  {{- $registrySecret := .Values.registrySecret | default "none" }}
+  {{- $licenseSecret := .Values.licenseSecret | default "none" }}
 
 kind: StorageCluster
 apiVersion: core.libopenstorage.org/v1
@@ -36,6 +42,13 @@ metadata:
 spec:
   image: portworx/oci-monitor:{{ required "A valid Image tag is required in the SemVer format" .Values.imageVersion }}
   imagePullPolicy: Always
+  {{- if not (eq $customRegistryURL "none") }}
+  customImageRegistry: {{ $customRegistryURL }}
+  {{- end }}
+  {{- if not (eq $registrySecret "none") }}
+  imagePullSecret: {{ $registrySecret }}
+  {{- end }}
+
   kvdb:
   {{- if eq $internalKVDB true }}
     internal: true
@@ -67,6 +80,14 @@ spec:
     useAllWithPartitions: true
     {{- end }}
 
+  network:
+    {{- if ne $dataInterface "none" }}
+    dataInterface: {{ $dataInterface }}
+    {{- end -}}
+    {{- if ne $managementInterface "none" }}
+    mgmtInterface: {{ $managementInterface }}
+    {{- end -}}
+
   {{- if ne $secretType "none" }}
   secretsProvider: {{$secretType}}
   {{- else }}
@@ -75,23 +96,45 @@ spec:
     {{- end }}
   {{- end }}
 
+  env:
+  {{ if not (eq $envVars "none") }}
+    {{- $vars := $envVars | split ";" }}
+    {{- range $key, $val := $vars }}
+    {{-  $envVariable := $val | split "=" }}
+    - name: {{ $envVariable._0 | trim | quote }}
+      value: {{ $envVariable._1 | trim | quote }}
+    {{ end }}
+  {{- end }}
+  {{- if ne $licenseSecret "none" }}
+    - name: SAAS_ACCOUNT_KEY_STRING
+      valueFrom:
+        secretKeyRef:
+          name: "{{ $licenseSecret }}"
+          key: accountKey
+  {{- end }}
+
   stork:
+    {{- if (and (.Values.stork) (eq .Values.stork true))}}
     enabled: true
-    args:
-      webhook-controller: "false"
-  autopilot:
-    enabled: true
-  monitoring:
-    prometheus:
-      enabled: true
-      exportMetrics: true
-  featureGates:
-    CSI: "true"
+      {{- if .Values.storkVersion }}
+    image: {{ template "px.getStorkImage" . }}:{{ required "A valid Image tag is required in the SemVer format" .Values.storkVersion }}
+      {{- end }}
+    {{- else }}
+    enabled: false
+    {{- end }}
+
   volumes:
     {{- if eq $isCoreOS true}}
     - name: src
       mountPath: /lib/modules
       hostPath: /lib/modules
     {{- end }}
+
+  autopilot:
+    enabled: true
+  monitoring:
+    prometheus:
+      enabled: true
+      exportMetrics: true
 {{- end }}
 
