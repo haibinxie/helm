@@ -18,6 +18,7 @@
   {{- $customRegistryURL := .Values.customRegistryURL | default "none" }}
   {{- $registrySecret := .Values.registrySecret | default "none" }}
   {{- $licenseSecret := .Values.licenseSecret | default "none" }}
+  {{- $kvdbDevice := .Values.kvdbDevice | default "none" }}
 
 kind: StorageCluster
 apiVersion: core.libopenstorage.org/v1
@@ -79,6 +80,9 @@ spec:
     {{- if eq $usedrivesAndPartitions true }}
     useAllWithPartitions: true
     {{- end }}
+    {{- if ne $kvdbDevice "none" }}
+    kvdbDevice: {{ $kvdbDevice }}
+    {{- end }}
 
   network:
     {{- if ne $dataInterface "none" }}
@@ -123,18 +127,36 @@ spec:
     enabled: false
     {{- end }}
 
+  {{- if eq $isCoreOS true}}
   volumes:
-    {{- if eq $isCoreOS true}}
     - name: src
       mountPath: /lib/modules
       hostPath: /lib/modules
-    {{- end }}
+  {{- end }}
 
-  autopilot:
-    enabled: true
+  {{- if (and (.Values.monitoring) (eq .Values.monitoring true)) }}
   monitoring:
     prometheus:
       enabled: true
       exportMetrics: true
+      alertManager:
+        enabled: true
+  {{- end }}
+
+  {{- if (and (.Values.csi) (eq .Values.csi true))}}
+  csi:
+    enabled: true
+  {{- end }}
+  {{- if (and (.Values.aut) (eq .Values.aut true))}}
+  autopilot:
+    enabled: true
+  {{- end }}
+
+  placement:
+    {{- with .Values.tolerations }}
+    tolerations:
+      {{- toYaml . | nindent 4 }}
+    {{- end }}
+
 {{- end }}
 
