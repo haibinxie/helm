@@ -6,8 +6,8 @@ imageVersion: 2.8.1.2                   # Version of the PX Image.
 pxOperatorImageVersion: 1.9.0-dev
 
 openshiftInstall: false                 # Defaults to false for installing Portworx on Openshift .
-isTargetOSCoreOS: false                 # Is your target OS CoreOS? Defaults to false.
-pksInstall: false                       # installation on PKS (Pivotal Container Service)
+isTargetOSCoreOS: true                 # Is your target OS CoreOS? Defaults to false.
+pksInstall: true                       # installation on PKS (Pivotal Container Service)
 EKSInstall: false                     # installation on EKS.
 AKSInstall: false                      # installation on AKS
 etcdEndPoint: a;b                        # The ETCD endpoint. Should be in the format etcd:http://<your-etcd-endpoint>:2379. If there are multiple etcd endpoints they need to be ";" seperated.
@@ -22,21 +22,21 @@ managementInterface: mi             # Name of the interface <ethX>
 envVars: SKIP_LVM_KERNEL_ALLOW_CHECK=true;DEFAULT_OSB_URL=https://master-staging.portworx.dev/osb/billing/v1/register                         # NOTE: This is a ";" seperated list of environment variables. For eg: MYENV1=myvalue1;MYENV2=myvalue2
 
 stork: true                           # Use Stork https://docs.portworx.com/scheduler/kubernetes/stork.html for hyperconvergence.
-storkVersion:
+storkVersion: 2.7.0
 
-customRegistryURL: a
-registrySecret: s
-licenseSecret: f
+customRegistryURL:
+registrySecret:
+licenseSecret: 
 
 monitoring: true
 
 journalDevice:
 
-deployOnMaster:  false                # For POC only
+deployOnMaster:  true                # For POC only
 csi: true                            # Enable CSI
 aut: true                            # Enable AutoPilot
 
-internalKVDB: false                   # internal KVDB
+internalKVDB: true                   # internal KVDB
 kvdbDevice: none                      # specify a separate device to store KVDB data, only used when internalKVDB is set to true
 
 etcd:
